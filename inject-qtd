@@ -15,7 +15,7 @@
             params: {
                 model: 'product.template',
                 method: 'read',
-                args: [1692, ['x_studio_float_field_107_1j0ac62oc']],
+                args: [1692, ['SEU CAMPO PERSONALIZADO']],
                 kwargs: {}
             },
             id: Date.now()
@@ -26,7 +26,7 @@
         console.log('📋 Resultado da busca AJAX:', data);
         
         if (data.result && Array.isArray(data.result) && data.result.length > 0) {
-            const fieldValue = data.result[0]['x_studio_float_field_107_1j0ac62oc'];
+            const fieldValue = data.result[0]['SEU CAMPO PERSONALIZADO'];
             console.log(`🎯 Valor do campo personalizado: ${fieldValue}`);
             
             if (fieldValue && fieldValue > 0) {
