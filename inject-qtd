@@ -1,0 +1,69 @@
+// TESTE DIRETO DO CAMPO PERSONALIZADO
+(function() {
+    console.log('🧪 Teste direto da busca do campo personalizado...');
+    
+    // Usar AJAX diretamente
+    fetch('/web/dataset/call_kw/product.template/read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'call',
+            params: {
+                model: 'product.template',
+                method: 'read',
+                args: [1692, ['x_studio_float_field_107_1j0ac62oc']],
+                kwargs: {}
+            },
+            id: Date.now()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📋 Resultado da busca AJAX:', data);
+        
+        if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+            const fieldValue = data.result[0]['x_studio_float_field_107_1j0ac62oc'];
+            console.log(`🎯 Valor do campo personalizado: ${fieldValue}`);
+            
+            if (fieldValue && fieldValue > 0) {
+                const customValue = parseInt(fieldValue);
+                console.log(`✅ SUCESSO! Campo personalizado: ${customValue}`);
+                
+                // Aplicar no campo de quantidade
+                const quantityInput = document.querySelector('input.form-control.quantity.text-center');
+                if (quantityInput) {
+                    quantityInput.value = customValue;
+                    quantityInput.style.border = '3px solid #059669';
+                    quantityInput.style.backgroundColor = '#ecfdf5';
+                    quantityInput.style.fontWeight = 'bold';
+                    quantityInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    console.log(`🎉 Valor ${customValue} aplicado com sucesso!`);
+                    
+                    // Notificação
+                    const alert = document.createElement('div');
+                    alert.style.cssText = `
+                        position: fixed; top: 20px; right: 20px; z-index: 99999;
+                        background: #059669; color: white; padding: 15px 20px;
+                        border-radius: 8px; font-weight: bold;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    `;
+                    alert.innerHTML = `✅ Valor ${customValue} do campo personalizado aplicado!`;
+                    document.body.appendChild(alert);
+                    setTimeout(() => alert.remove(), 4000);
+                }
+            } else {
+                console.log('⚠️ Campo está vazio ou zero');
+            }
+        } else {
+            console.log('❌ Produto não encontrado ou sem dados');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erro na busca:', error);
+    });
+})();
