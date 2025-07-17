@@ -1,0 +1,316 @@
+// ========================================================================
+// SOLUÇÃO JS - INJEÇÃO VIA QWEB (FUNCIONA PARA TODOS OS USUÁRIOS)
+// ========================================================================
+
+(function() {
+    'use strict';
+    
+    console.log('🚀 Iniciando injeção de quantidade personalizada...');
+    
+    // Aguardar DOM carregar e tentar múltiplas vezes
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    function init() {
+        // Tentar aplicar em múltiplos momentos
+        setTimeout(() => applyCustomQuantityFromQWeb(), 500);
+        setTimeout(() => applyCustomQuantityFromQWeb(), 1500);
+        setTimeout(() => applyCustomQuantityFromQWeb(), 3000);
+    }
+    
+    // Função principal (melhorada)
+    function applyCustomQuantityFromQWeb() {
+        console.log('🔍 Aplicando quantidade personalizada do QWeb...');
+        
+        // Verificar se as variáveis do QWeb foram carregadas
+        if (typeof window.customQuantityValue === 'undefined') {
+            console.log('⚠️ Variável customQuantityValue não encontrada, tentando detectar...');
+            
+            // Tentar detectar pelo alerta visual
+            const alertElement = document.querySelector('.alert-info');
+            if (alertElement && alertElement.textContent.includes('Quantidade mínima:')) {
+                const match = alertElement.textContent.match(/(\d+)\s+unidades/);
+                if (match) {
+                    window.customQuantityValue = parseInt(match[1]);
+                    console.log(`✅ Valor detectado pelo alerta: ${window.customQuantityValue}`);
+                } else {
+                    console.log('❌ Não foi possível extrair valor do alerta');
+                    return;
+                }
+            } else {
+                console.log('❌ Alerta de quantidade mínima não encontrado');
+                return;
+            }
+        }
+        
+        const customValue = window.customQuantityValue;
+        const productId = window.productId || 'detectado';
+        const productName = window.productName || 'Caneta Plástica Ipanema';
+        
+        console.log(`🎯 Produto: ${productName} (ID: ${productId})`);
+        console.log(`📊 Quantidade personalizada: ${customValue}`);
+        
+        // Encontrar campo de quantidade
+        const quantityInput = findQuantityInput();
+        if (!quantityInput) {
+            console.log('❌ Campo de quantidade não encontrado, tentando novamente...');
+            return false;
+        }
+        
+        // Verificar se já foi aplicado
+        if (quantityInput.value == customValue && quantityInput.style.border.includes('059669')) {
+            console.log('✅ Valor já aplicado anteriormente');
+            return true;
+        }
+        
+        // Aplicar quantidade personalizada
+        setQuantityValue(quantityInput, customValue);
+        
+        // Configurar validações
+        if (customValue > 1) {
+            setupQuantityValidation(quantityInput, customValue);
+            showQuantityAlert(customValue);
+        }
+        
+        console.log(`✅ Quantidade ${customValue} aplicada com sucesso!`);
+        return true;
+    }
+    
+    // Função para encontrar campo de quantidade (melhorada)
+    function findQuantityInput() {
+        const selectors = [
+            'input[name="add_qty"]',
+            'input.form-control.quantity.text-center',
+            'input.quantity.text-center',
+            '.css_quantity input[name="add_qty"]',
+            'input[type="text"]',
+            'input[type="number"]'
+        ];
+        
+        for (const selector of selectors) {
+            const input = document.querySelector(selector);
+            if (input && input.type !== 'hidden') {
+                console.log(`✅ Campo encontrado: ${selector}`, input);
+                return input;
+            }
+        }
+        
+        // Debug: listar todos os inputs
+        console.log('🔍 Todos os inputs encontrados:');
+        const allInputs = document.querySelectorAll('input');
+        allInputs.forEach((input, index) => {
+            console.log(`Input ${index + 1}:`, {
+                name: input.name,
+                type: input.type,
+                value: input.value,
+                className: input.className,
+                element: input
+            });
+        });
+        
+        return null;
+    }
+    
+    // Função para aplicar valor no campo
+    function setQuantityValue(input, value) {
+        // Definir valor
+        input.value = value;
+        input.setAttribute('data-min', value);
+        input.setAttribute('min', value);
+        input.setAttribute('data-custom-value', value);
+        
+        // Estilo visual apenas se valor > 1
+        if (value > 1) {
+            input.style.border = '2px solid #059669';
+            input.style.backgroundColor = '#ecfdf5';
+            input.style.fontWeight = 'bold';
+            input.style.color = '#065f46';
+        }
+        
+        // Disparar eventos
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    // Função para validação do campo
+    function setupQuantityValidation(input, minValue) {
+        // Validação em tempo real
+        input.addEventListener('input', function() {
+            const currentValue = parseInt(this.value) || minValue;
+            if (currentValue < minValue) {
+                this.value = minValue;
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+        
+        // Validação ao sair do campo
+        input.addEventListener('blur', function() {
+            const currentValue = parseInt(this.value) || minValue;
+            if (currentValue < minValue) {
+                this.value = minValue;
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+                showMinQuantityAlert(minValue);
+            }
+        });
+        
+        // Interceptar botões + e -
+        interceptQuantityButtons(input, minValue);
+    }
+    
+    // Função para interceptar botões de incremento/decremento
+    function interceptQuantityButtons(input, minValue) {
+        const container = input.closest('.css_quantity, .input-group');
+        if (!container) return;
+        
+        // Encontrar botões
+        const buttons = container.querySelectorAll('a');
+        
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                setTimeout(() => {
+                    const currentValue = parseInt(input.value) || minValue;
+                    if (currentValue < minValue) {
+                        input.value = minValue;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        showMinQuantityAlert(minValue);
+                    }
+                }, 100);
+            });
+        });
+    }
+    
+    // Função para mostrar alerta de quantidade
+    function showQuantityAlert(value) {
+        if (value <= 1) return;
+        
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            background: #059669;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center;">
+                <span style="margin-right: 8px;">✅</span>
+                <div>
+                    <div>Quantidade personalizada aplicada!</div>
+                    <div style="font-size: 14px; opacity: 0.9;">${value} unidades mínimas</div>
+                </div>
+            </div>
+        `;
+        
+        // Adicionar CSS da animação
+        if (!document.querySelector('#custom-quantity-styles')) {
+            const style = document.createElement('style');
+            style.id = 'custom-quantity-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 4000);
+    }
+    
+    // Função para mostrar alerta de quantidade mínima
+    function showMinQuantityAlert(minValue) {
+        const existingAlert = document.querySelector('.temp-min-quantity-alert');
+        if (existingAlert) existingAlert.remove();
+        
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-warning temp-min-quantity-alert';
+        alert.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            border-left: 4px solid #dc2626;
+            border-radius: 4px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 300px;
+        `;
+        
+        alert.innerHTML = `
+            <div style="display: flex; align-items: center;">
+                <i class="fa fa-exclamation-triangle" style="margin-right: 8px; color: #dc2626;"></i>
+                <strong>Quantidade mínima: ${minValue} unidades</strong>
+            </div>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => alert.remove(), 3000);
+    }
+    
+    // Função para teste manual (melhorada)
+    window.testCustomQuantity = function() {
+        console.log('🧪 Testando quantidade personalizada...');
+        const result = applyCustomQuantityFromQWeb();
+        if (!result) {
+            console.log('🔄 Tentando forçar aplicação...');
+            // Forçar valor 50 se a página for da Caneta Plástica Ipanema
+            if (window.location.href.includes('caneta-plastica-ipanema') || 
+                window.location.href.includes('1692')) {
+                window.customQuantityValue = 50;
+                applyCustomQuantityFromQWeb();
+            }
+        }
+    };
+    
+    // Função para debug completo
+    window.debugQuantityIssue = function() {
+        console.log('🔍 DEBUG COMPLETO:');
+        console.log('URL:', window.location.href);
+        console.log('customQuantityValue:', window.customQuantityValue);
+        console.log('productId:', window.productId);
+        console.log('productName:', window.productName);
+        
+        const alertElement = document.querySelector('.alert-info');
+        console.log('Alert element:', alertElement);
+        if (alertElement) {
+            console.log('Alert text:', alertElement.textContent);
+        }
+        
+        const quantityInput = findQuantityInput();
+        console.log('Quantity input found:', quantityInput);
+        
+        if (quantityInput) {
+            console.log('Current input value:', quantityInput.value);
+            console.log('Input attributes:', {
+                name: quantityInput.name,
+                type: quantityInput.type,
+                className: quantityInput.className
+            });
+        }
+    };
+    
+    console.log('✅ Script de quantidade personalizada carregado!');
+    console.log('💡 Para testar manualmente: testCustomQuantity()');
+    
+})();
