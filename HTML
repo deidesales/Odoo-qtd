@@ -1,0 +1,20 @@
+<!-- Variável JavaScript com valor do campo personalizado -->
+<script type="text/javascript">
+    // Valor do campo personalizado passado do backend
+    window.customQuantityValue = <t t-esc="int(product.SEU CAMPO PERSONALIZADO AQUI or 1)"/>;
+    window.productId = <t t-esc="product.id"/>;
+    window.productName = '<t t-esc="product.name"/>';
+    
+    console.log('🎯 Dados do produto carregados:');
+    console.log('Product ID:', window.productId);
+    console.log('Product Name:', window.productName);
+    console.log('Custom Quantity Value:', window.customQuantityValue);
+</script>
+
+<!-- Alerta visual (opcional) -->
+<t t-if="product.SEU CAMPO PERSONALIZADO AQUI and product.SEU CAMPO PERSONALIZADO AQUI > 1">
+    <div class="alert alert-info mb-3" style="border-left: 4px solid #059669; background-color: #ecfdf5; color: #065f46;">
+        <i class="fa fa-info-circle me-2"></i>
+        <strong>Quantidade mínima:</strong> <span t-esc="int(product.SEU CAMPO PERSONALIZADO AQUI)"/> unidades
+    </div>
+</t>
